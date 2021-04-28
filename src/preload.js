@@ -13,8 +13,8 @@ pushData = (databases, data) => {
 
 showChangeLog = () => {
     pushData('plugin', { version: pluginInfo.version })
-    var log = fs.readFileSync(path.join(__dirname,'CHANGELOG.MD'), {encoding: 'utf8'})
-    if(log) utools.ubrowser.goto(log, '更新日志').run()
+    var log = fs.readFileSync(path.join(__dirname, 'CHANGELOG.MD'), { encoding: 'utf8' })
+    if (log) utools.ubrowser.goto(log, '更新日志').run()
 }
 
 isRunningAtFirstTime = () => {
@@ -39,7 +39,7 @@ GetFilePath = File => {
     if (isDev) {
         return path.join(__dirname, 'script', File)
     } else {
-        return path.join(__dirname.replace(/([a-zA-Z0-9\-]+\.asar)/,'$1.unpacked'), 'script', File)  
+        return path.join(__dirname.replace(/([a-zA-Z0-9\-]+\.asar)/, '$1.unpacked'), 'script', File)
     }
 }
 
@@ -58,12 +58,18 @@ setDesktop = path => {
         exec(`osascript -e 'tell application "System Events" to set picture of desktop 1 to "${path}"'`, (err, stdout, stderr) => {
             err && utools.showNotification(stderr)
         })
-    } else if(utools.isWindows()){
+    } else if (utools.isWindows()) {
         var script = GetFilePath('setDesktop.cs')
         exec(`powershell -NoProfile -Command "Add-Type -Path ${script}; [Wallpaper.Setter]::SetWallpaper('${path}', 'Stretch')"`, (err, stdout, stderr) => {
             err && utools.showNotification(stderr)
         })
-    } else {
-        utools.showNotification('不支持 Linux')
+    } else if (utools.isLinux()) {
+        exec(`command -v gsettings >>/dev/null`, (err,stdout,stderr)=>{
+            err && utools.showNotification("仅支持gnome桌面环境")
+        })
+        var path_save = window.joinpath(utools.getPath('pictures'), path.split('/').pop())
+        exec(`cp -f ${path} ${path_save};gsettings set org.gnome.desktop.background picture-uri 'file://${path_save}' `, (err, stdout, stderr) => {
+            err && utools.showNotification(stderr)
+        })
     }
 }
